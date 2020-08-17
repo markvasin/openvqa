@@ -19,21 +19,22 @@ class Net(nn.Module):
 
         # Loading the GloVe embedding weights
         self.word_embedding.weight.data.copy_(torch.from_numpy(pretrained_emb))
+        self.position_embeddings = nn.Embedding(43, __C.HIDDEN_SIZE)
 
-        self.bert_embedding = BertEmbeddings()
+        # self.bert_embedding = BertEmbeddings()
 
         # Segment embedding
         self.segment_embedding = nn.Embedding(2, __C.HIDDEN_SIZE)
 
-        self.lstm = nn.LSTM(
-            input_size=__C.WORD_EMBED_SIZE,
-            hidden_size=__C.HIDDEN_SIZE,
-            num_layers=1,
-            batch_first=True,
-            bidirectional=True
-        )
+        # self.lstm = nn.LSTM(
+        #     input_size=__C.WORD_EMBED_SIZE,
+        #     hidden_size=__C.HIDDEN_SIZE,
+        #     num_layers=1,
+        #     batch_first=True,
+        #     bidirectional=True
+        # )
 
-        self.lstm_proj = nn.Linear(__C.HIDDEN_SIZE * 2, __C.HIDDEN_SIZE)
+        self.text_proj = nn.Linear(__C.WORD_EMBED_SIZE, __C.HIDDEN_SIZE)
         self.cls_project = nn.Linear(__C.WORD_EMBED_SIZE, __C.HIDDEN_SIZE)
         self.img_encoder = Adapter(__C)
         self.transformer = Transformer(__C)
@@ -53,8 +54,13 @@ class Net(nn.Module):
         # create text feature
         text_feat_mask = make_mask(ques_ix.unsqueeze(2))
         text_feat = self.word_embedding(ques_ix)
-        text_feat, _ = self.lstm(text_feat)
-        text_feat = self.lstm_proj(text_feat)
+        seq_length = text_feat.size()[1]
+        position_ids = torch.arange(seq_length, dtype=torch.long, device=device)
+        position_ids = position_ids.unsqueeze(0).expand(ques_ix.size())
+        position_embeddings = self.position_embeddings(position_ids)
+        # text_feat, _ = self.lstm(text_feat)
+        text_feat = self.text_proj(text_feat)
+        text_feat = text_feat + position_embeddings
 
         # create text segment embedding
         text_seg_ids = torch.zeros(text_feat.size()[:-1], dtype=torch.long, device=device)
@@ -79,13 +85,13 @@ class Net(nn.Module):
         cls_token = self.cls_project(cls_token)
 
         # prepare input embedding for transformer
-        embeddings = torch.cat([cls_token, text_feat, img_feat], dim=1)
+        embeddings = torch.cat([cls_token, img_feat, text_feat], dim=1)
         embeddings = self.layer_norm(embeddings)
         embeddings = self.embbeding_dropout(embeddings)
 
         # prepare mask for self attention
         cls_mask = make_mask(cls_token)
-        attention_mask = torch.cat([cls_mask, text_feat_mask, img_feat_mask], dim=-1)
+        attention_mask = torch.cat([cls_mask, img_feat_mask, text_feat_mask], dim=-1)
 
         # Backbone Framework
         feat = self.transformer(embeddings, attention_mask)
