@@ -97,16 +97,17 @@ def visualise_engine(__C):
         txt_attention_map = txt_attention_map[:, :, :, 1:len(words) + 1]
         pred_np = pred.cpu().data.numpy()
         pred_argmax = np.argmax(pred_np, axis=1)
-        ans = dataset.ix_to_ans[pred_argmax[0]]
-
-        visualise_img(question['image_filename'][0], question['question'][0], img_attention_map.cpu().data.numpy()[0],
+        ans = dataset.ix_to_ans[str(pred_argmax[0])]
+        plt.interactive(False)
+        visualise_img(image_id[0], question[0], img_attention_map.cpu().data.numpy()[0],
                       ans, target_ans[0])
-        visualise_txt(words, txt_attention_map.cpu().data.numpy()[0])
+        # visualise_txt(words, txt_attention_map.cpu().data.numpy()[0])
 
 
 
 def visualise_img(image_id, question, attention_map, ans, target_ans):
-    img_path = os.path.join('/home/mark/openvqa/data/clevr/raw/images/val', image_id)
+    # img_path = os.path.join('/home/mark/openvqa/data/clevr/raw/images/val', image_id)
+    img_path = os.path.join('/home/mark/openvqa/data/gqa/images', image_id + '.jpg')
     original_img = imread(img_path, mode='RGB')
     img = imresize(original_img, (224, 224), interp='bicubic')
     fig = plt.figure()
@@ -117,20 +118,20 @@ def visualise_img(image_id, question, attention_map, ans, target_ans):
              fontsize=12, fontname='Droid Sans')
     plt.show()
 
-    plt.figure(figsize=(40, 30))
-    count = 1
-    for i in range(6):
-        for j in range(8):
-            plt.subplot(6, 8, count)
-            attention = skimage.transform.pyramid_expand(attention_map[i][j].reshape(14, 14), upscale=16, sigma=10)
-            plt.imshow(img)
-            plt.imshow(attention, alpha=0.6)
-            plt.text(0, 1, f'[IMG]-Layer{i}-Head{j}', backgroundcolor='white', fontsize=26)
-            plt.text(0, 1, f'[IMG]-Layer{i}-Head{j}', color='black', fontsize=26)
-            plt.set_cmap(cm.Greys_r)
-            plt.axis('off')
-            count += 1
-    plt.show()
+    # plt.figure(figsize=(40, 30))
+    # count = 1
+    # for i in range(6):
+    #     for j in range(8):
+    #         plt.subplot(6, 8, count)
+    #         attention = skimage.transform.pyramid_expand(attention_map[i][j].reshape(14, 14), upscale=16, sigma=10)
+    #         plt.imshow(img)
+    #         plt.imshow(attention, alpha=0.6)
+    #         plt.text(0, 1, f'[IMG]-Layer{i}-Head{j}', backgroundcolor='white', fontsize=26)
+    #         plt.text(0, 1, f'[IMG]-Layer{i}-Head{j}', color='black', fontsize=26)
+    #         plt.set_cmap(cm.Greys_r)
+    #         plt.axis('off')
+    #         count += 1
+    # plt.show()
 
 
 def visualise_txt(question, attention_map):
@@ -164,7 +165,7 @@ def ckpt_proc(state_dict):
 
 
 if __name__ == '__main__':
-    args = Namespace(BATCH_SIZE=None, CKPT_EPOCH=16, CKPT_PATH=None, CKPT_VERSION='5825257', DATASET='clevr',
+    args = Namespace(BATCH_SIZE=None, CKPT_EPOCH=11, CKPT_PATH=None, CKPT_VERSION='7901586', DATASET='gqa',
                      EVAL_EVERY_EPOCH=None, GPU=None, GRAD_ACCU_STEPS=None, MODEL='vqabert', NUM_WORKERS=None,
                      PIN_MEM=None,
                      RESUME=None, RUN_MODE='visualise', SEED=None, TEST_SAVE_PRED=None, TRAIN_SPLIT=None, VERBOSE=None,

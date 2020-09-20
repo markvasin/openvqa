@@ -81,7 +81,7 @@ class PATH:
                 'train': '',
                 'val': 'testdev',
                 'test': 'test',
-                'visualise': 'testdev'
+                'visualise': 'val'
             },
             'clevr': {
                 'train': '',

@@ -188,15 +188,15 @@ class DataSet(BaseDataSet):
         iid = self.ques_dict[qid]['imageId']
 
         ques = self.ques_dict[qid]['question']
-        ques_ix_iter = self.proc_ques(ques, self.token_to_ix, max_token=self.max_token)
+        ques_ix_iter, words = self.proc_ques(ques, self.token_to_ix, max_token=self.max_token)
         ans_iter = np.zeros(1)
 
-        if self.__C.RUN_MODE in ['train']:
+        if self.__C.RUN_MODE in ['train', 'visualise']:
             # process answers
             ans = self.ques_dict[qid]['answer']
             ans_iter = self.proc_ans(ans, self.ans_to_ix)
 
-        return ques_ix_iter, ans_iter, iid, ques
+        return ques_ix_iter, ans_iter, iid, ques, words, ans
 
 
     def load_img_feats(self, idx, iid):
@@ -266,7 +266,7 @@ class DataSet(BaseDataSet):
             if ix + 1 == max_token:
                 break
 
-        return ques_ix
+        return ques_ix, words
 
 
     def proc_ans(self, ans, ans_to_ix):
